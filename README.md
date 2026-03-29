@@ -1,12 +1,12 @@
 # ChatGPT
 
-**A skill for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) that lets your agent send prompts to ChatGPT via Chrome and collect the responses.**
+**A skill for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) and Codex that lets your agent send prompts to ChatGPT through your logged-in browser session and collect the responses.**
 
-> *You type `/chatgpt thinking xhigh`, provide the prompt, and Claude drives the ChatGPT UI: selects the model, polls until the response finishes, copies the markdown, and saves it to a file.*
+> *You type `/chatgpt thinking xhigh` in Claude Code or `$chatgpt thinking xhigh` in Codex, provide the prompt, and your agent drives the ChatGPT UI: selects the model, polls until the response finishes, captures the response, and saves it to a file.*
 
-Uses the [Claude in Chrome](https://chromewebstore.google.com/detail/claude-in-chrome/oikdahcampanlblkmhfaigiheadcmfkb) extension for browser automation — no API keys, no headless browser, just your logged-in ChatGPT session. This is a convenience wrapper, not a robust automation API.
+Claude Code uses the [Claude in Chrome](https://chromewebstore.google.com/detail/claude-in-chrome/oikdahcampanlblkmhfaigiheadcmfkb) extension. Codex uses [browser-use](https://github.com/browser-use/browser-use) with your real Chrome profile (`Default`). No API keys, no manual copy-paste, just your logged-in ChatGPT session. This is a convenience wrapper, not a robust automation API. The Codex variant treats DOM text extraction as the primary capture path because ChatGPT's native copy button can fail under browser automation.
 
-Invoke with `/chatgpt <model> [effort]` or ask your agent to "send this to chatgpt", "ask chatgpt", or "use chatgpt".
+Invoke with `/chatgpt <model> [effort]` in Claude Code or `$chatgpt <model> [effort]` in Codex, or ask your agent to "send this to chatgpt", "ask chatgpt", or "use chatgpt".
 
 ## Table of Contents
 
@@ -23,16 +23,36 @@ Invoke with `/chatgpt <model> [effort]` or ask your agent to "send this to chatg
 
 ## Prerequisites
 
-1. **Claude Code** — installed and running ([docs](https://docs.anthropic.com/en/docs/claude-code))
-2. **Claude in Chrome extension** — install from the [Chrome Web Store](https://chromewebstore.google.com/detail/claude-in-chrome/oikdahcampanlblkmhfaigiheadcmfkb), then connect it to your Claude Code session
+1. **Claude Code or Codex** — installed and running
+2. **Agent-specific browser automation**
+   - Claude Code: install the Claude in Chrome extension from the [Chrome Web Store](https://chromewebstore.google.com/detail/claude-in-chrome/oikdahcampanlblkmhfaigiheadcmfkb), then connect it to your Claude Code session
+   - Codex: install `browser-use` and make sure `browser-use` is on `PATH`
 3. **ChatGPT account** — logged in within Chrome. The `pro` model is only available on accounts where it appears in the ChatGPT model picker
-4. **Clipboard permission** — when prompted by Chrome, allow clipboard access for chatgpt.com (needed to copy responses)
+4. **Chrome profile** — Codex expects the ChatGPT login to live in the local Chrome `Default` profile
+5. **Clipboard permission** — when prompted by Chrome, allow clipboard access for chatgpt.com (needed to copy responses)
+
+### Installing `browser-use` for Codex
+
+```bash
+curl -fsSL https://browser-use.com/cli/install.sh | bash
+browser-use doctor
+```
 
 ### Connecting Claude in Chrome
 
 1. Install the extension from the Chrome Web Store link above
 2. Open Chrome and click the extension icon — it should show "Connected" when Claude Code is running
 3. Verify by asking Claude Code to take a screenshot of your current tab
+
+### Chrome Profile for Codex
+
+Codex uses:
+
+```bash
+browser-use --session chatgpt --headed --profile "Default"
+```
+
+That means the `Default` Chrome profile must already be signed into ChatGPT.
 
 ---
 
@@ -44,41 +64,63 @@ Invoke with `/chatgpt <model> [effort]` or ask your agent to "send this to chatg
 │  2. Select model + effort level              │
 │  3. Type prompt, verify submission           │
 │  4. Poll for completion (seconds to minutes) │
-│  5. Click "Copy response" + validate clip    │
-│  6. Save markdown to file                    │
+│  5. Extract latest response text             │
+│  6. Save response to file                    │
 └──────────────────────────────────────────────┘
 ```
 
-The skill automates the full ChatGPT web UI workflow through Chrome — clicking buttons, selecting dropdowns, typing text, and reading responses — exactly as a human would.
+The skill automates the full ChatGPT web UI workflow through Chrome — clicking buttons, selecting dropdowns, typing text, and reading responses — exactly as a human would. The browser backend differs by agent, and so does the invocation syntax: `/chatgpt` in Claude Code, `$chatgpt` in Codex. Claude’s path can preserve markdown through ChatGPT’s copy button; Codex’s tested path is plain-text extraction from the latest assistant message.
 
 ---
 
 ## Installation
 
-Clone into your Claude Code skills directory:
+If you use this dotfiles repo, `./dotfiles.sh` installs the correct agent-specific variant automatically.
+
+For standalone installation, clone the repo somewhere neutral, then symlink the agent-specific subdirectory:
 
 ```bash
-git clone https://github.com/chrisliu298/chatgpt.git ~/.claude/skills/chatgpt
+git clone https://github.com/chrisliu298/chatgpt.git ~/.cache/chatgpt-src
+```
+
+Claude Code:
+
+```bash
+ln -s ~/.cache/chatgpt-src/claude ~/.claude/skills/chatgpt
+```
+
+Codex:
+
+```bash
+ln -s ~/.cache/chatgpt-src/codex ~/.codex/skills/chatgpt
 ```
 
 ---
 
 ## Usage
 
-```
+Claude Code:
+
+```text
 /chatgpt <model> [effort]
+```
+
+Codex:
+
+```text
+$chatgpt <model> [effort]
 ```
 
 **Examples:**
 
-```
+```text
 /chatgpt thinking xhigh
 > Analyze the convergence properties of Adam vs SGD with momentum...
 
-/chatgpt pro high
+$chatgpt pro high
 > Survey the literature on test-time compute scaling...
 
-/chatgpt instant
+$chatgpt instant
 > Summarize this paragraph in one sentence...
 ```
 
@@ -88,7 +130,7 @@ The agent will:
 2. Select the requested model and effort level
 3. Send your prompt
 4. Wait for the response to complete (polling at appropriate intervals)
-5. Copy the response with clipboard validation and save it as a markdown file
+5. Capture the response and save it as a markdown file
 
 ---
 
@@ -136,15 +178,16 @@ Vary widely with prompt complexity, output length, and server load. Treat as rou
 
 ## Multi-turn Conversations
 
-After the initial response, you can send follow-up messages in the same ChatGPT conversation. The agent reuses the existing chat without changing the model or starting over.
+After the initial response, you can send follow-up messages in the same ChatGPT conversation. The agent reuses the existing chat without changing the model or starting over. In Codex, that reuse is anchored to the persistent `browser-use` session named `chatgpt`.
 
 ---
 
 ## Limitations
 
 - **Text-only prompts** — file attachments and image uploads are not supported
-- **Text-only responses** — images, canvases, and other non-text artifacts are not captured by the copy button
-- **Browser-dependent** — requires a live Chrome session with the extension connected; not suitable for headless or unattended environments
+- **Text-only responses** — images, canvases, and other non-text artifacts are not captured
+- **Codex formatting caveat** — the Codex variant saves DOM-extracted text by default, so markdown fidelity is not guaranteed under browser automation
+- **Browser-dependent** — Claude requires the extension-connected Chrome session; Codex requires `browser-use` to open the real Chrome `Default` profile; not suitable for headless or unattended environments
 - **macOS primary** — clipboard extraction uses `pbpaste` by default; Linux and Windows users need alternative clipboard commands
 
 ---
@@ -152,4 +195,5 @@ After the initial response, you can send follow-up messages in the same ChatGPT 
 ## Contributors
 
 - [@chrisliu298](https://github.com/chrisliu298)
-- **Claude Code** — skill design and browser automation protocol
+- **Claude Code** — original skill design and browser automation protocol
+- **Codex** — browser-use variant exposed as `$chatgpt`
