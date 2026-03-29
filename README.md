@@ -4,7 +4,7 @@
 
 > *You type `/chatgpt thinking xhigh` in Claude Code or `$chatgpt thinking xhigh` in Codex, provide the prompt, and your agent drives the ChatGPT UI: selects the model, polls until the response finishes, captures the response, and saves it to a file.*
 
-Claude Code uses the [Claude in Chrome](https://chromewebstore.google.com/detail/claude-in-chrome/oikdahcampanlblkmhfaigiheadcmfkb) extension. Codex uses [browser-use](https://github.com/browser-use/browser-use) with your real Chrome profile (`Default`). No API keys, no manual copy-paste, just your logged-in ChatGPT session. This is a convenience wrapper, not a robust automation API. The Codex variant treats DOM text extraction as the primary capture path because ChatGPT's native copy button can fail under browser automation.
+Claude Code uses the [Claude in Chrome](https://chromewebstore.google.com/detail/claude-in-chrome/oikdahcampanlblkmhfaigiheadcmfkb) extension. Codex uses `chrome-devtools-mcp` to attach to your live signed-in Chrome session. No API keys, no manual copy-paste, just your logged-in ChatGPT session. This is a convenience wrapper, not a robust automation API. The Codex variant treats DOM text extraction as the primary capture path, with ChatGPT's native copy button as an optional formatting-preserving path.
 
 Invoke with `/chatgpt <model> [effort]` in Claude Code or `$chatgpt <model> [effort]` in Codex, or ask your agent to "send this to chatgpt", "ask chatgpt", or "use chatgpt".
 
@@ -26,17 +26,24 @@ Invoke with `/chatgpt <model> [effort]` in Claude Code or `$chatgpt <model> [eff
 1. **Claude Code or Codex** — installed and running
 2. **Agent-specific browser automation**
    - Claude Code: install the Claude in Chrome extension from the [Chrome Web Store](https://chromewebstore.google.com/detail/claude-in-chrome/oikdahcampanlblkmhfaigiheadcmfkb), then connect it to your Claude Code session
-   - Codex: install `browser-use` and make sure `browser-use` is on `PATH`
+   - Codex: configure `chrome-devtools-mcp` as a Codex MCP server
 3. **ChatGPT account** — logged in within Chrome. The `pro` model is only available on accounts where it appears in the ChatGPT model picker
-4. **Chrome profile** — Codex expects the ChatGPT login to live in the local Chrome `Default` profile
+4. **Live Chrome session** — Codex expects ChatGPT to already be open and signed in within your local Chrome session
 5. **Clipboard permission** — when prompted by Chrome, allow clipboard access for chatgpt.com (needed to copy responses)
 
-### Installing `browser-use` for Codex
+### Configuring `chrome-devtools-mcp` for Codex
 
 ```bash
-curl -fsSL https://browser-use.com/cli/install.sh | bash
-browser-use doctor
+npx -y chrome-devtools-mcp@latest --help
 ```
+
+Then add it to Codex as an MCP server, for example:
+
+```bash
+codex mcp add chrome-devtools -- npx -y chrome-devtools-mcp@latest --autoConnect --channel stable --no-usage-statistics
+```
+
+Chrome must also have remote debugging enabled at `chrome://inspect/#remote-debugging`.
 
 ### Connecting Claude in Chrome
 
@@ -44,15 +51,15 @@ browser-use doctor
 2. Open Chrome and click the extension icon — it should show "Connected" when Claude Code is running
 3. Verify by asking Claude Code to take a screenshot of your current tab
 
-### Chrome Profile for Codex
+### Chrome Session for Codex
 
-Codex uses:
+Codex attaches to the live Chrome session via:
 
 ```bash
-browser-use --session chatgpt --headed --profile "Default"
+npx -y chrome-devtools-mcp@latest --autoConnect --channel stable
 ```
 
-That means the `Default` Chrome profile must already be signed into ChatGPT.
+That means Chrome must already be open locally and signed into ChatGPT.
 
 ---
 
@@ -69,7 +76,7 @@ That means the `Default` Chrome profile must already be signed into ChatGPT.
 └──────────────────────────────────────────────┘
 ```
 
-The skill automates the full ChatGPT web UI workflow through Chrome — clicking buttons, selecting dropdowns, typing text, and reading responses — exactly as a human would. The browser backend differs by agent, and so does the invocation syntax: `/chatgpt` in Claude Code, `$chatgpt` in Codex. Claude’s path can preserve markdown through ChatGPT’s copy button; Codex’s tested path is plain-text extraction from the latest assistant message.
+The skill automates the full ChatGPT web UI workflow through Chrome: clicking buttons, selecting dropdowns, typing text, and reading responses. The browser backend differs by agent, and so does the invocation syntax: `/chatgpt` in Claude Code, `$chatgpt` in Codex. Claude’s path can preserve markdown through ChatGPT’s copy button; Codex’s default path is plain-text extraction from the latest assistant message, with `Copy response` available when clipboard-preserving output is worth the extra step.
 
 ---
 
@@ -178,7 +185,7 @@ Vary widely with prompt complexity, output length, and server load. Treat as rou
 
 ## Multi-turn Conversations
 
-After the initial response, you can send follow-up messages in the same ChatGPT conversation. The agent reuses the existing chat without changing the model or starting over. In Codex, that reuse is anchored to the persistent `browser-use` session named `chatgpt`.
+After the initial response, you can send follow-up messages in the same ChatGPT conversation. The agent reuses the existing chat without changing the model or starting over. In Codex, that reuse is anchored to the attached live ChatGPT tab.
 
 ---
 
@@ -187,7 +194,7 @@ After the initial response, you can send follow-up messages in the same ChatGPT 
 - **Text-only prompts** — file attachments and image uploads are not supported
 - **Text-only responses** — images, canvases, and other non-text artifacts are not captured
 - **Codex formatting caveat** — the Codex variant saves DOM-extracted text by default, so markdown fidelity is not guaranteed under browser automation
-- **Browser-dependent** — Claude requires the extension-connected Chrome session; Codex requires `browser-use` to open the real Chrome `Default` profile; not suitable for headless or unattended environments
+- **Browser-dependent** — Claude requires the extension-connected Chrome session; Codex requires `chrome-devtools-mcp` to attach to a live signed-in Chrome session; not suitable for headless or unattended environments
 - **macOS primary** — clipboard extraction uses `pbpaste` by default; Linux and Windows users need alternative clipboard commands
 
 ---
@@ -196,4 +203,4 @@ After the initial response, you can send follow-up messages in the same ChatGPT 
 
 - [@chrisliu298](https://github.com/chrisliu298)
 - **Claude Code** — original skill design and browser automation protocol
-- **Codex** — browser-use variant exposed as `$chatgpt`
+- **Codex** — `chrome-devtools-mcp` variant exposed as `$chatgpt`
