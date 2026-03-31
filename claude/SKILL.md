@@ -5,9 +5,9 @@ description: |
   Send prompts to ChatGPT via Chrome browser automation and collect responses. Use this skill
   whenever the user wants to ask ChatGPT something, delegate a task to ChatGPT, get ChatGPT's
   perspective, or use ChatGPT's reasoning capabilities. Triggers on "ask chatgpt", "send to
-  chatgpt", "use chatgpt", "chatgpt", "have chatgpt", or /chatgpt. Accepts two arguments:
+  chatgpt", "use chatgpt", "chatgpt", "have chatgpt", or "chatgpt". Accepts two arguments:
   <model> <effort> where model is instant/thinking/pro and effort is low/medium/high/xhigh.
-  Example: /chatgpt thinking xhigh, /chatgpt pro high, /chatgpt instant.
+  Example: chatgpt thinking xhigh, chatgpt pro high, chatgpt instant.
 allowed-tools: Bash(pbpaste), Write, mcp__claude-in-chrome__*
 user-invocable: true
 ---
@@ -27,7 +27,7 @@ This is a convenience wrapper around the ChatGPT web UI, not a robust automation
 ## Arguments
 
 ```text
-/chatgpt <model> [effort]
+chatgpt <model> [effort]
 ```
 
 **Models:** `instant`, `thinking`, `pro`

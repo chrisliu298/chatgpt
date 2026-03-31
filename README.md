@@ -76,7 +76,7 @@ That means Chrome must already be open locally and signed into ChatGPT.
 └──────────────────────────────────────────────┘
 ```
 
-The skill automates the full ChatGPT web UI workflow through Chrome: clicking buttons, selecting dropdowns, typing text, and reading responses. The browser backend differs by agent, and so does the invocation syntax: `/chatgpt` in Claude Code, `$chatgpt` in Codex. Claude’s path can preserve markdown through ChatGPT’s copy button; Codex’s default path is plain-text extraction from the latest assistant message, with `Copy response` available when clipboard-preserving output is worth the extra step.
+The skill automates the full ChatGPT web UI workflow through Chrome: clicking buttons, selecting dropdowns, typing text, and reading responses. Claude’s path can preserve markdown through ChatGPT’s copy button; Codex’s default path is plain-text extraction from the latest assistant message, with `Copy response` available when clipboard-preserving output is worth the extra step.
 
 ---
 
