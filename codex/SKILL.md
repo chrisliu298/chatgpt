@@ -1,6 +1,5 @@
 ---
 name: chatgpt
-effort: medium
 description: |
   Send prompts to ChatGPT via chrome-devtools-mcp and collect responses. Use this skill
   whenever the user wants to ask ChatGPT something, delegate a task to ChatGPT, get ChatGPT's
